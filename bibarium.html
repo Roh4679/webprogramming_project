@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>작은 숲 상자</title>
+    <style>
+        body {
+            background: #222;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        canvas {
+            width: 750px;
+            height: 500px;
+            image-rendering: pixelated;
+        }
+
+        #buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            gap: 8px;
+        }
+
+        #buttons button {
+            height: 44px;
+            font-size: 18px;
+            color: white;
+            text-shadow: 1px 1px 2px black;
+            border: 3px outset #ddd;
+        }
+
+        #buttons button.selected {
+            border: 3px inset #fff;
+        }
+
+        /* 배경 하늘: 작은 캔버스를 화면 전체로 늘림, 맨 뒤에 깔림 */
+        #sky {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            image-rendering: pixelated;
+        }
+
+        /* 오른쪽 패널: 버튼(위) + 습도계(아래) 세로로 쌓기 */
+        #panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        #gauge {
+            display: flex;
+            align-items: flex-end;
+            gap: 20px;
+            color: white;
+            font-size: 20px;
+            text-shadow: 1px 1px 2px black;
+        }
+
+        /* 온도계 = 관(위) + 둥근 구(아래) */
+        #thermo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #tube {
+            position: relative;
+            width: 22px;
+            height: 200px;
+            border: 3px solid #ddd;
+            border-bottom: none;
+            border-radius: 14px 14px 0 0;
+            /* 20px마다 회색 눈금 = 10%마다 한 줄 */
+            background: repeating-linear-gradient(to top, #f4f4f4 0 18px, #999 18px 20px);
+            overflow: hidden;
+        }
+
+        /* 습도만큼 차오르는 기둥 (높이는 JS가 %로 정함) */
+        #fill {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: #5B8FE0;
+            transition: height 0.3s;
+        }
+
+        #bulb {
+            width: 46px;
+            height: 46px;
+            margin-top: -4px;
+            border-radius: 50%;
+            background: #5B8FE0;
+            border: 3px solid #ddd;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 배경 하늘 (96x60을 화면 크기로 확대) -->
+    <canvas id="sky" width="96" height="60"></canvas>
+    <!-- 비바리움 상자 -->
+    <canvas id="box" width="150" height="100"></canvas>
+    <!-- 오른쪽 패널 -->
+    <div id="panel">
+        <div id="buttons"></div>
+        <div id="gauge">
+            <div id="thermo">
+                <div id="tube">
+                    <div id="fill"></div>
+                </div>
+                <div id="bulb"></div>
+            </div>
+            <div>
+                <div id="clock"></div>
+                <div>습도 <span id="hum"></span>%</div>
+            </div>
+        </div>
+    </div>
+    <script src="js/physics.js"></script>
+    <script src="js/life.js"></script>
+    <script src="js/sky.js"></script>
+    <script src="js/main.js"></script>
+</body>
+
+</html>
