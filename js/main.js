@@ -43,9 +43,6 @@ const limit = new Uint8Array(W * H);
 //상자 안 공기의 습도 0~100
 let humidity = 50;
 
-
-
-
 //유리벽: 좌,우,아래 (위는 뚜껑이라 비워둠)
 for (let y = 0; y < H; y++) { grid[idx(0, y)] = GLASS; grid[idx(W - 1, y)] = GLASS; }
 for (let x = 0; x < W; x++) grid[idx(x, H - 1)] = GLASS;
@@ -56,8 +53,8 @@ const img = ctx.createImageData(W, H);
 function draw() {
     for (let i = 0; i < W * H; i++) {
         let c = COLORS[grid[i]];
-        //젖을수록 흙 어둡게
-        if (grid[i] === SOIL) {
+        //젖을수록 흙·자갈 어둡게
+        if (grid[i] === SOIL || grid[i] === GRAVEL) {
             const k = 1 - wet[i] * 0.1;
             c = [c[0] * k, c[1] * k, c[2] * k];
         }
@@ -109,6 +106,40 @@ for (const t of TOOLS) {
 }
 box.firstChild.classList.add('selected');
 
+
+//===== 행동 버튼 (붓이 아니라 누르면 바로 실행) =====
+// 분무: 위쪽에 물방울을 흩뿌리고, 공기도 바로 촉촉해짐
+function spray() {
+    for (let n = 0; n < 30; n++) {                   // 물방울 30개
+        const x = 1 + Math.floor(Math.random() * (W - 2)); // 벽 안쪽 아무 x
+        const y = 1 + Math.floor(Math.random() * 5);       // 위에서 1~5번째 줄
+        if (grid[idx(x, y)] === EMPTY) grid[idx(x, y)] = WATER;
+    }
+    humidity = Math.min(100, humidity + 5);
+}
+const sprayBtn = document.createElement('button');
+sprayBtn.textContent = '분무';
+sprayBtn.style.background = '#5B8FE0';
+sprayBtn.onclick = spray;
+box.appendChild(sprayBtn);
+
+// 뚜껑: 닫으면 맨 윗줄을 유리로 막고, 열면 다시 비움
+let lidClosed = false;
+function setLid(close) {
+    lidClosed = close;
+    for (let x = 1; x < W - 1; x++) {
+        const i = idx(x, 0);
+        if (close && grid[i] === EMPTY) grid[i] = GLASS;   // 닫기: 빈칸 → 유리
+        else if (!close && grid[i] === GLASS) grid[i] = EMPTY; // 열기: 유리 → 빈칸
+    }
+    lidBtn.textContent = close ? '뚜껑 열기' : '뚜껑 닫기';    // 버튼엔 "누르면 할 일"을 표시
+}
+const lidBtn = document.createElement('button');
+lidBtn.textContent = '뚜껑 닫기';
+lidBtn.style.background = '#7a8a90';
+lidBtn.onclick = () => setLid(!lidClosed);           // 누를 때마다 열림 ↔ 닫힘
+box.appendChild(lidBtn);
+
 //마우스로 칠하기
 let painting = false;
 canvas.onmousedown = e => { painting = true; paint(e); };
@@ -147,7 +178,7 @@ function update() {
                 fall(x, y, [EMPTY, WATER]); soak(x, y);
                 evaporate(x, y);
             } // 흙은 물속으로 가라앉음
-            else if (t === GRAVEL) fall(x, y, [EMPTY]);
+            else if (t === GRAVEL) { fall(x, y, [EMPTY]); evaporate(x, y); } // 자갈이 머금은 물도 증발
             else if (t === WATER) {
                 flow(x, y);
                 evaporate(x, y);
@@ -169,7 +200,8 @@ function update() {
 function loop() {
     tick();                                // 시간 흐름
     update();                              // 칸 규칙
-    humidity -= humidity * 0.0005;         // 열린 위쪽으로 수증기가 조금씩 빠져나감 (뚜껑은 5단계)
+    condense();
+    if (!lidClosed) humidity -= humidity * 0.0025; // 뚜껑 열림: 수증기가 밖으로 빠져나감 (예전 0.005의 절반 속도)
     draw();
     if (frame % 10 === 0) {                // 하늘·습도계는 천천히 변하니 10프레임마다만
         drawSky();
